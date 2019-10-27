@@ -3,18 +3,19 @@
 #include <string.h>
 #include <stdlib.h>
 #define chunk_bits 512 
-#define rightrotate(i,n) ((i >> n) | (i << (32-n)))
-#define rightshift(i,n) (i >> n)
+#define INT_MAX ((long long int)1 << 32)
 /*
-   int rightrotate(int i, int n)
+#define rightrotate(i,n) (((i) >> (n)) | ((i) << (32-(n))))
+#define rightshift(i,n) ((i) >> (n))
+*/
+   unsigned int rightrotate(unsigned int i, unsigned int n)
    {
-   return i >> n | i << (32-n);
+   return (i >> n) | (i << (32-n));
    }
-   int rightshift(int i, int n)
+   unsigned int rightshift(unsigned int i, unsigned int n)
    {
    return i >> n;
    }
- */
 void print_bit_pattern(int c, int n)
 {	
 	for(int i = 0; i < n; i++)
@@ -29,7 +30,7 @@ unsigned int* sha256(char* msg)
 {
 	union {
 		unsigned char m[chunk_bits/8];//magic!!
-		int w[chunk_bits/32 * 4];
+		unsigned int w[chunk_bits/32 * 4];
 	}sixteen_32_bits;
 	for(int i = 0; i < chunk_bits/8; i++)
 		sixteen_32_bits.m[i] = 0;
@@ -69,10 +70,11 @@ unsigned int* sha256(char* msg)
 		chptr[i] = cp++;
 	for(int i = 0; i < 4; i++)
 	{
-		char t = *chptr[i];
+		unsigned char t = *chptr[i];
 		*chptr[i] = *chptr[7-i];
 		*chptr[7-i] = t;
 	}
+	/*
 	printf("8 bits char:\n");
 	for(int i = 0; i < chunk_bits/8; i++)
 		print_bit_pattern(m[i], 8);
@@ -83,8 +85,9 @@ unsigned int* sha256(char* msg)
 	for(int i = 0; i < chunk_bits/8; i++)
 		printf("%02x ", m[i]);
 	printf("\n");
-	int s0, s1;
-	int* w = sixteen_32_bits.w;
+	*/
+	unsigned int s0, s1;
+	unsigned int* w = sixteen_32_bits.w;
 	for(int i = 16; i < 64; i++)
 	{
 		s0 = rightrotate(w[i-15],7) ^ rightrotate(w[i-15],18)
@@ -104,12 +107,13 @@ unsigned int* sha256(char* msg)
 	h = hash[7];
 	for(int i = 0; i < 64;i++)
 	{
+		//printf("%12u %12u %12u %12u\n%12u %12u %12u %12u", a, b, c, d, e, f, g, h);
 		s0 = rightrotate(a,2) ^ rightrotate(a,13) ^ rightrotate(a,22);
 		maj = (a&b) ^ (b&c) ^ (a&c);
-		t2 = s0 + maj;
+		t2 = ((long long int)s0 + maj) %  INT_MAX;
 		s1 = rightrotate(e, 6) ^ rightrotate(e, 11) ^ rightrotate(e, 25);
 		ch = (e&f) ^ ((~e)&g);
-		t1 = h + s1 + ch + k[i] + w[i];
+		t1 = ((long long int)h + s1 + ch + k[i] + w[i]) % INT_MAX;
 		h = g;
 		g = f;
 		f = e;
@@ -117,15 +121,22 @@ unsigned int* sha256(char* msg)
 		d = c;
 		c = b;
 		b = a;
-		a = t1 + t2;
+		a = ((long long int)t1 + t2) % INT_MAX;
+		b %= INT_MAX;
+		c %= INT_MAX;
+		d %= INT_MAX;
+		e %= INT_MAX;
+		f %= INT_MAX;
+	 	g %= INT_MAX;
+		h %= INT_MAX;
 	}
-	hash[0] += a;
-	hash[1] += b;
-	hash[2] += c;
-	hash[3] += d;
-	hash[4] += e;
-	hash[5] += f;
-	hash[6] += g;
-	hash[7] += h;
+	hash[0] += a % INT_MAX;
+	hash[1] += b % INT_MAX;
+	hash[2] += c % INT_MAX;
+	hash[3] += d % INT_MAX;
+	hash[4] += e % INT_MAX;
+	hash[5] += f % INT_MAX;
+	hash[6] += g % INT_MAX;
+	hash[7] += h % INT_MAX;
 	return hash;
 }
