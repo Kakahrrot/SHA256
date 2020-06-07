@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #define chunk_bits 512 
 #define INT_MAX ((long long int)1 << 32)
+// test for demo
 /*
 #define rightrotate(i,n) (((i) >> (n)) | ((i) << (32-(n))))
 #define rightshift(i,n) ((i) >> (n))
